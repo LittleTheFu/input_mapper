@@ -12,7 +12,7 @@ From this directory, run:
 dotnet run
 ```
 
-The WPF host embeds the existing HTML interface with WebView2. When **开始映射** is enabled, Windows low-level keyboard and mouse hooks forward physical key and mouse events to the visualizer. The hooks are removed when mapping is stopped or the window closes.
+The WPF host embeds the HTML interface with WebView2. Global keyboard and mouse capture starts automatically after the interface loads and stops when the window closes. Physical input events are forwarded to the visualizer without suppressing them.
 
 ## Structure
 

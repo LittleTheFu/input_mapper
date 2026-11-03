@@ -23,9 +23,8 @@ public partial class MainWindow : Window
         try
         {
             await Browser.EnsureCoreWebView2Async();
-            Browser.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
             _capture.Input += OnNativeInput;
-            _ready = true;
+            Browser.NavigationCompleted += OnNavigationCompleted;
             var page = Path.Combine(AppContext.BaseDirectory, "web", "index.html");
             Browser.Source = new Uri(page);
         }
@@ -38,26 +37,25 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnWebMessageReceived(object? sender, CoreWebView2WebMessageReceivedEventArgs e)
+    private void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
+        if (!e.IsSuccess)
+        {
+            MessageBox.Show(this, "桌面界面加载失败。", "Input Mapper", MessageBoxButton.OK, MessageBoxImage.Error);
+            Close();
+            return;
+        }
+
         try
         {
-            using var json = JsonDocument.Parse(e.WebMessageAsJson);
-            var root = json.RootElement;
-            if (root.TryGetProperty("type", out var type) && type.GetString() == "capture" &&
-                root.TryGetProperty("active", out var active))
-            {
-                if (active.GetBoolean())
-                {
-                    try { _capture.Start(); }
-                    catch { _ = Browser.CoreWebView2.ExecuteScriptAsync("window.dispatchEvent(new Event('captureerror'))"); }
-                }
-                else _capture.Stop();
-            }
+            _capture.Start();
+            _ready = true;
         }
-        catch (JsonException)
+        catch (Exception ex)
         {
-            // Ignore messages that are not part of the small host bridge.
+            MessageBox.Show(this, "无法启用全局键鼠监听。\n\n" + ex.Message,
+                "Input Mapper", MessageBoxButton.OK, MessageBoxImage.Error);
+            Close();
         }
     }
 
