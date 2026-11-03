@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>键鼠映射 · 原型</title>
+<style>
+  :root { color-scheme: dark; --bg:#211b1c; --panel:#302527; --line:#76524b; --peach:#e8b28d; --cream:#f4d6b5; --mint:#9ce3a7; --muted:#ba9b91; }
+  * { box-sizing:border-box }
+  body { margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% 10%,#563b3d,#261f21 65%); color:var(--cream); font:15px/1.5 "Segoe UI","Microsoft YaHei",sans-serif; }
+  main { width:min(1100px,96vw); margin:auto; padding:28px 0 36px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px; }
+  h1 { margin:0; font-size:22px; letter-spacing:.08em; font-weight:650 }
+  .status { color:var(--mint); font:12px/1.4 Consolas,monospace; letter-spacing:.12em }
+  .status::before { content:""; display:inline-block; width:8px;height:8px;border-radius:50%;background:var(--mint);margin-right:9px;box-shadow:0 0 10px #9ce3a7 }
+  .screen { min-height:160px; border:8px solid #c9906e; border-radius:22px; background:#101b1a; box-shadow:0 12px 0 #865f4e, inset 0 0 35px #000; padding:22px 28px; font:16px/1.8 Consolas,monospace; color:var(--mint); }
+  .screen-top { text-align:center; letter-spacing:.18em; margin-bottom:12px; opacity:.85 }
+  .screen-line { color:#d6edc9 }
+  .recent { color:#9ce3a7 }
+  .layout { display:grid; grid-template-columns:1fr 240px; gap:18px; margin-top:26px; }
+  .panel { border:1px solid #785950; border-radius:14px; background:#392c2dce; padding:18px; box-shadow:0 10px 25px #100b0b55 }
+  h2 { margin:0 0 14px; color:#f2c9a2; font-size:14px; font-weight:600; letter-spacing:.08em }
+  .keyboard { display:grid; gap:6px; user-select:none }
+  .row { display:flex; gap:6px; justify-content:center }
+  .key { min-width:38px; height:38px; display:grid; place-items:center; border:1px solid #9e725b; border-radius:7px; background:linear-gradient(#e5b48f,#bb876a); color:#392824; box-shadow:0 3px 0 #755343; font:600 12px Consolas,monospace; transition:transform .05s,filter .08s,background .08s; }
+  .key.w2 { min-width:58px } .key.w3 { min-width:76px } .key.w4 { min-width:98px } .key.space { flex:1;max-width:270px }
+  .key.down { transform:translateY(3px); box-shadow:0 0 0 #755343; background:var(--mint); filter:brightness(1.08) }
+  .key.dim { opacity:.55 }
+  .side { display:flex; flex-direction:column; gap:14px }
+  .mousepad { height:210px; border-radius:12px; background:linear-gradient(145deg,#705048,#3d2b2d); border:1px solid #9b7060; position:relative; overflow:hidden; cursor:crosshair }
+  .mouse { display:none }
+  .mouse-hand { position:absolute; left:50%;top:55%; width:210px; height:135px; transform:translate(-65%,-21%); background-image:url("mouse-hand-sprites.png");background-repeat:no-repeat;background-size:200% 100%;background-position:0% 50%;pointer-events:none;transition:left .045s linear,top .045s linear,filter .08s;filter:drop-shadow(0 3px 2px #1c111155); }
+  .mouse-hand.left-click { background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
+  .mouse-hand.right-click { background-image:url("mouse-hand-right-click-sprites.png");background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
+  .mouse-hand.scroll-wheel { animation:scroll-bob .24s ease-in-out 2 }
+  @keyframes scroll-bob { 50% { transform:translate(-65%,-23%) } }
+  .controls { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+  button { border:1px solid #af8067; border-radius:8px; padding:9px 13px; background:#c9906e; color:#2b1f1c; font-weight:650; cursor:pointer }
+  button:hover { filter:brightness(1.1) }
+  .hint,.event { color:var(--muted); font-size:12px }
+  .event { min-height:34px; padding:8px 10px; border-radius:8px; background:#20191a; color:#d1ad9c; font:12px Consolas,monospace }
+  .keyboard-deck { position:relative; }
+  .hands-stage { position:relative; width:100%; aspect-ratio:1920 / 819; margin-top:-125px; overflow:visible; pointer-events:none; z-index:3; }
+  .keyboard-hand { position:absolute;top:0;width:50%;height:100%;background-repeat:no-repeat;background-size:200% 100%;transition:transform .12s ease,background-image .08s; }
+  .keyboard-hand.left { left:0;background-position:left center;background-image:url("keyboard-hands-idle.png"); }
+  .keyboard-hand.right { right:0;background-position:right center;background-image:url("keyboard-hands-idle.png"); }
+  .skin { fill:#e9b393; stroke:#754d42; stroke-width:2.2; stroke-linejoin:round; }
+  .shade { fill:#d99677; opacity:.55 }
+  .nail { fill:#f6d1b8; stroke:#b97862; stroke-width:1.2 }
+  .cuff { fill:#f2d9c1; stroke:#9f7161; stroke-width:2 }
+  .cuff-line { fill:none; stroke:#bd8d76; stroke-width:2 }
+  .ribbon { fill:#35282a; stroke:#d79a5c; stroke-width:1.4 }
+  .flower { fill:#e58a38; stroke:#7c4e39; stroke-width:1 }
+  .finger { transform-box:fill-box; transform-origin:50% 100%; transition:transform .12s ease,filter .11s ease; }
+  .finger.down { filter:brightness(1.12) }
+  .hand-palm { transition:filter .12s; }
+  .keyboard-finger-legend { display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:8px;color:#c0a39a;font-size:11px }
+  .keyboard-finger-legend span::before { content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#d69a76;margin-right:5px }
+  footer { margin-top:14px; color:#b89a90; font-size:12px }
+  @media(max-width:760px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.mousepad{height:160px}.key{min-width:26px;height:34px;font-size:10px}.key.w2{min-width:40px}.key.w3{min-width:54px}.key.w4{min-width:66px}}
+</style>
+</head>
+<body>
+<main>
+  <header><h1>键鼠映射 <span style="color:#d49472">/ INPUT VISUALIZER</span></h1><div class="status" id="status">READY · 点击开始映射</div></header>
+  <section class="screen" aria-live="polite">
+    <div class="screen-top">— CONNECTED —</div>
+    <div class="screen-line">HELLO?</div>
+    <div>&gt; <span class="recent" id="typed">等待输入<span id="cursor">█</span></span></div>
+  </section>
+  <div class="layout">
+    <section class="panel"><h2>键盘输入</h2><div class="keyboard-deck"><div class="keyboard" id="keyboard"></div>
+      <div class="hands-stage" id="handsStage" aria-label="键盘手部动作示意"><div class="keyboard-hand left" id="leftHand" role="img" aria-label="左手"></div><div class="keyboard-hand right" id="rightHand" role="img" aria-label="右手"></div></div>
+      <div class="keyboard-finger-legend">按下键位时，对应手切换姿势并移到键帽位置</div>
+      </div>
+    </section>
+    <aside class="side">
+      <section class="panel"><h2>鼠标输入</h2><div class="mousepad" id="mousepad"><div class="mouse" id="mouse"></div><div class="mouse-hand" id="mouseHand" aria-label="鼠标手部动作示意"></div></div><div class="event" id="mouseEvent">移动鼠标或点击此区域</div></section>
+      <section class="panel"><h2>状态</h2><div class="event" id="keyEvent">最近按键：—</div><p class="hint">点击「开始映射」后，在本窗口中按键。鼠标轨迹只在右侧区域显示。</p><div class="controls"><button id="start">开始映射</button><button id="clear">清空</button></div></section>
+    </aside>
+  </div>
+  <footer>原型版只监听此窗口获得焦点时的输入。全局监听需要后续封装为桌面程序。</footer>
+</main>
+<script>
+const rows=[['ESC','1','2','3','4','5','6','7','8','9','0','-','=','BACK'],['TAB','Q','W','E','R','T','Y','U','I','O','P','[',']','\\'],['CAPS','A','S','D','F','G','H','J','K','L',';','\'','ENTER'],['SHIFT','Z','X','C','V','B','N','M',',','.','/','SHIFT'],['CTRL','WIN','ALT','SPACE','ALT','FN','MENU','CTRL']];
+const kb=document.getElementById('keyboard'); const keyEls=new Map(),codeEls=new Map();
+const modifierCodes={SHIFT:['ShiftLeft','ShiftRight'],CTRL:['ControlLeft','ControlRight'],ALT:['AltLeft','AltRight'],WIN:['MetaLeft']};
+rows.forEach((row,ri)=>{const line=document.createElement('div');line.className='row';const seen={};row.forEach(label=>{const b=document.createElement('div');b.className='key';b.textContent=label; if(['BACK','TAB','CAPS','ENTER'].includes(label))b.classList.add('w2');if(label==='SHIFT')b.classList.add('w3');if(label==='SPACE')b.classList.add('space');line.appendChild(b);const k=label==='SPACE'?' ':label.toLowerCase();keyEls.set(k,b);const occurrence=seen[label]||0;seen[label]=occurrence+1;const code=modifierCodes[label]?.[occurrence];if(code)codeEls.set(code,b)});kb.appendChild(line)});
+const special={' ':'SPACE','Backspace':'BACK','Tab':'TAB','CapsLock':'CAPS','Enter':'ENTER','Shift':'SHIFT','Control':'CTRL','Alt':'ALT','Meta':'WIN','ArrowUp':'↑','ArrowDown':'↓','ArrowLeft':'←','ArrowRight':'→'};
+const typed=document.getElementById('typed'), keyEvent=document.getElementById('keyEvent'), mouseEvent=document.getElementById('mouseEvent');let buffer='',active=false;
+function displayKey(e){return special[e.key]||e.key.toUpperCase()}
+const fingerMap={lp:'1qaz',lr:'2wsx',lm:'3edc',li:'45rtfgvb',ri:'67yuhjnm',rm:'8ik,',rr:'9ol.',rp:'0p[]\\;\'/',lt:' ',rt:' '};
+function mappedFingers(k){if(k===' ')return ['lt','rt'];for(const [finger,keys] of Object.entries(fingerMap))if(finger!=='lt'&&finger!=='rt'&&keys.includes(k))return [finger];return []}
+const poseNames={lp:'left-pinky',lr:'left-ring',lm:'left-middle',li:'left-index',lt:'left-thumb',rp:'right-pinky',rr:'right-ring',rm:'right-middle',ri:'right-index',rt:'right-thumb'};
+Object.values(poseNames).concat(['idle']).forEach(n=>{const img=new Image();img.src=`keyboard-hands-${n}.png`});
+const rightClickPreload=new Image();rightClickPreload.src='mouse-hand-right-click-sprites.png';
+// X values are local to each hand's half of the sprite canvas; the right-hand half starts at source x=960.
+const pressedTipAnchors={lp:[485,155],lr:[565,140],lm:[660,135],li:[835,198],lt:[882,280],rp:[475,155],rr:[375,140],rm:[280,135],ri:[125,190],rt:[78,275]};
+function showHandPose(id,keyEl){const handId=id[0]==='l'?'leftHand':'rightHand',hand=document.getElementById(handId),stage=document.getElementById('handsStage'),r=stage.getBoundingClientRect(),key=keyEl.getBoundingClientRect(),[ax,ay]=pressedTipAnchors[id];hand.style.backgroundImage=`url("keyboard-hands-${poseNames[id]}.png")`;const homeX=(id[0]==='l'?0:r.width/2)+ax*r.width/1920,homeY=ay*r.height/819;const targetX=key.left+key.width/2-r.left,targetY=key.top+key.height/2-r.top;hand.style.transform=`translate(${targetX-homeX}px,${targetY-homeY}px)`}
+function resetHands(){for(const side of ['left','right']){const hand=document.getElementById(side+'Hand');hand.style.backgroundImage='';hand.style.transform=''}}
+function onDown(e){if(!active||e.repeat)return;if([' ','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab','Backspace'].includes(e.key))e.preventDefault();const k=e.key.toLowerCase(),label=displayKey(e);const el=codeEls.get(e.code)||keyEls.get(k)||keyEls.get(label.toLowerCase());if(el)el.classList.add('down');keyEvent.textContent='最近按键：'+label;for(const id of mappedFingers(k))showHandPose(id,el);if(e.isTrusted){if(e.key.length===1&&!e.ctrlKey&&!e.altKey&&!e.metaKey)buffer=(buffer+e.key).slice(-42);else if(e.key==='Backspace')buffer=buffer.slice(0,-1);typed.innerHTML=escapeHtml(buffer)+'<span id="cursor">█</span>';}}
+function onUp(e){const label=displayKey(e),el=codeEls.get(e.code)||keyEls.get(e.key.toLowerCase())||keyEls.get(label.toLowerCase());if(el)el.classList.remove('down');resetHands()}
+function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function setCaptureUi(on){active=on;document.getElementById('status').textContent=active?'LISTENING · 键盘已激活':'READY · 点击开始映射';document.getElementById('start').textContent=active?'停止映射':'开始映射';if(!active){document.querySelectorAll('.key.down').forEach(k=>k.classList.remove('down'));resetHands()}}
+document.getElementById('start').onclick=()=>{setCaptureUi(!active);if(window.chrome?.webview)window.chrome.webview.postMessage({type:'capture',active})};
+document.getElementById('clear').onclick=()=>{buffer='';typed.innerHTML='等待输入<span id="cursor">█</span>';keyEvent.textContent='最近按键：—';mouseEvent.textContent='移动鼠标或点击此区域'};
+if(!window.chrome?.webview){window.addEventListener('keydown',onDown);window.addEventListener('keyup',onUp)}
+window.addEventListener('blur',()=>{if(!window.chrome?.webview){document.querySelectorAll('.key.down').forEach(k=>k.classList.remove('down'));resetHands()}});
+const pad=document.getElementById('mousepad'),mouse=document.getElementById('mouse'),mouseHand=document.getElementById('mouseHand');
+function showMouseAt(x,y){const r=pad.getBoundingClientRect(),px=x*r.width,py=y*r.height;mouse.style.left=px+'px';mouse.style.top=py+'px';mouseHand.style.left=px+'px';mouseHand.style.top=py+'px'}
+pad.addEventListener('pointermove',e=>{const r=pad.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;mouse.style.left=x+'px';mouse.style.top=y+'px';mouseHand.style.left=x+'px';mouseHand.style.top=y+'px';mouseEvent.textContent=`位置：${Math.round(x)}, ${Math.round(y)}`});
+pad.addEventListener('pointerdown',e=>{mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(e.button===0)mouseHand.classList.add('left-click');else if(e.button===2)mouseHand.classList.add('right-click');mouseEvent.textContent='鼠标按下 · '+(e.button===0?'左键':e.button===2?'右键':'中键')});
+window.addEventListener('pointerup',()=>{mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click')});
+pad.addEventListener('wheel',e=>{mouseHand.classList.remove('scroll-wheel');void mouseHand.offsetWidth;mouseHand.classList.add('scroll-wheel');mouseEvent.textContent='滚轮：'+(e.deltaY<0?'向上':'向下');setTimeout(()=>mouseHand.classList.remove('scroll-wheel'),520)},{passive:true});pad.addEventListener('contextmenu',e=>e.preventDefault());
+const nativeDown=new Set();
+window.addEventListener('nativeinput',e=>{const d=e.detail;if(d.kind==='key'){if(d.phase==='down')nativeDown.add(d.code);else nativeDown.delete(d.code);const ev=new KeyboardEvent(d.phase==='down'?'keydown':'keyup',{key:d.key,code:d.code,ctrlKey:nativeDown.has('ControlLeft')||nativeDown.has('ControlRight'),shiftKey:nativeDown.has('ShiftLeft')||nativeDown.has('ShiftRight'),altKey:nativeDown.has('AltLeft')||nativeDown.has('AltRight'),metaKey:nativeDown.has('MetaLeft')||nativeDown.has('MetaRight')});if(d.phase==='down')onDown(ev);else onUp(ev)}else if(d.kind==='mouse'){showMouseAt(d.x,d.y);if(d.phase==='move')return;if(d.phase==='down'){mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(d.button==='left')mouseHand.classList.add('left-click');else if(d.button==='right')mouseHand.classList.add('right-click');mouseEvent.textContent='鼠标按下 · '+(d.button==='left'?'左键':d.button==='right'?'右键':'中键')}else if(d.phase==='up'){mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click')}else if(d.phase==='wheel-up'||d.phase==='wheel-down'){mouseHand.classList.remove('scroll-wheel');void mouseHand.offsetWidth;mouseHand.classList.add('scroll-wheel');mouseEvent.textContent='滚轮：'+(d.phase==='wheel-up'?'向上':'向下');setTimeout(()=>mouseHand.classList.remove('scroll-wheel'),520)}}});
+window.addEventListener('captureerror',()=>setCaptureUi(false));
+</script>
+</body>
+</html>
