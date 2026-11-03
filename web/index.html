@@ -11,6 +11,9 @@
   main { width:min(1360px,96vw); margin:auto; padding:20px 0 24px; }
   header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px; }
   h1 { margin:0; font-size:22px; letter-spacing:.08em; font-weight:650 }
+  .header-controls { display:flex; align-items:center; gap:18px }
+  .skin-picker { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:12px }
+  .skin-picker select { border:1px solid #785950; border-radius:7px; padding:7px 10px; background:#392c2d; color:var(--cream); font:13px "Segoe UI","Microsoft YaHei",sans-serif }
   .status { color:var(--mint); font:12px/1.4 Consolas,monospace; letter-spacing:.12em }
   .status::before { content:""; display:inline-block; width:8px;height:8px;border-radius:50%;background:var(--mint);margin-right:9px;box-shadow:0 0 10px #9ce3a7 }
   .layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(340px,34%); gap:20px; margin-top:18px; }
@@ -28,7 +31,7 @@
   .mouse { display:none }
   .mouse-hand { position:absolute; left:50%;top:55%; width:210px; height:135px; transform:translate(-65%,-21%); background-image:url("mouse-hand-sprites.png");background-repeat:no-repeat;background-size:200% 100%;background-position:0% 50%;pointer-events:none;transition:left .045s linear,top .045s linear,filter .08s;filter:drop-shadow(0 3px 2px #1c111155); }
   .mouse-hand.left-click { background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
-  .mouse-hand.right-click { background-image:url("mouse-hand-right-click-sprites.png");background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
+  .mouse-hand.right-click { background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
   .mouse-hand.scroll-wheel { animation:scroll-bob .24s ease-in-out 2 }
   @keyframes scroll-bob { 50% { transform:translate(-65%,-23%) } }
   .hint,.event { color:var(--muted); font-size:12px }
@@ -56,7 +59,7 @@
 </head>
 <body>
 <main>
-  <header><h1>键鼠映射 <span style="color:#d49472">/ INPUT VISUALIZER</span></h1><div class="status" id="status">LISTENING · 全局键鼠已激活</div></header>
+  <header><h1>键鼠映射 <span style="color:#d49472">/ INPUT VISUALIZER</span></h1><div class="header-controls"><label class="skin-picker" for="skinSelect">手部皮肤<select id="skinSelect"><option value="classic">经典款</option><option value="blue">蓝发角色</option></select></label><div class="status" id="status">LISTENING · 全局键鼠已激活</div></div></header>
   <div class="layout">
     <section class="panel"><h2>键盘输入</h2><div class="keyboard-deck"><div class="keyboard" id="keyboard"></div>
       <div class="hands-stage" id="handsStage" aria-label="键盘手部动作示意"><div class="keyboard-hand left" id="leftHand" role="img" aria-label="左手"></div><div class="keyboard-hand right" id="rightHand" role="img" aria-label="右手"></div></div>
@@ -80,23 +83,31 @@ function displayKey(e){return special[e.key]||e.key.toUpperCase()}
 const fingerMap={lp:'1qaz',lr:'2wsx',lm:'3edc',li:'45rtfgvb',ri:'67yuhjnm',rm:'8ik,',rr:'9ol.',rp:'0p[]\\;\'/',lt:' ',rt:' '};
 function mappedFingers(k){if(k===' ')return ['lt','rt'];for(const [finger,keys] of Object.entries(fingerMap))if(finger!=='lt'&&finger!=='rt'&&keys.includes(k))return [finger];return []}
 const poseNames={lp:'left-pinky',lr:'left-ring',lm:'left-middle',li:'left-index',lt:'left-thumb',rp:'right-pinky',rr:'right-ring',rm:'right-middle',ri:'right-index',rt:'right-thumb'};
-Object.values(poseNames).concat(['idle']).forEach(n=>{const img=new Image();img.src=`keyboard-hands-${n}.png`});
-const rightClickPreload=new Image();rightClickPreload.src='mouse-hand-right-click-sprites.png';
+for(const prefix of ['','blue-'])Object.values(poseNames).concat(['idle']).forEach(n=>{const img=new Image();img.src=`keyboard-hands-${prefix}${n}.png`});
+['mouse-hand-sprites.png','mouse-hand-right-click-sprites.png','mouse-hand-blue-sprites.png','mouse-hand-blue-right-click-sprites.png'].forEach(src=>{const img=new Image();img.src=src});
 // X values are local to each hand's half of the sprite canvas; the right-hand half starts at source x=960.
 const pressedTipAnchors={lp:[485,155],lr:[565,140],lm:[660,135],li:[835,198],lt:[882,280],rp:[475,155],rr:[375,140],rm:[280,135],ri:[125,190],rt:[78,275]};
-function showHandPose(id,keyEl){const handId=id[0]==='l'?'leftHand':'rightHand',hand=document.getElementById(handId),stage=document.getElementById('handsStage'),r=stage.getBoundingClientRect(),key=keyEl.getBoundingClientRect(),[ax,ay]=pressedTipAnchors[id];hand.style.backgroundImage=`url("keyboard-hands-${poseNames[id]}.png")`;const homeX=(id[0]==='l'?0:r.width/2)+ax*r.width/1920,homeY=ay*r.height/819;const targetX=key.left+key.width/2-r.left,targetY=key.top+key.height/2-r.top;hand.style.transform=`translate(${targetX-homeX}px,${targetY-homeY}px)`}
-function resetHands(){for(const side of ['left','right']){const hand=document.getElementById(side+'Hand');hand.style.backgroundImage='';hand.style.transform=''}}
+let activeSkin='classic';
+function keyboardAsset(pose){return `keyboard-hands-${activeSkin==='blue'?'blue-':''}${pose}.png`}
+function mouseAsset(rightClick=false){return activeSkin==='blue'?(rightClick?'mouse-hand-blue-right-click-sprites.png':'mouse-hand-blue-sprites.png'):(rightClick?'mouse-hand-right-click-sprites.png':'mouse-hand-sprites.png')}
+function showHandPose(id,keyEl){const handId=id[0]==='l'?'leftHand':'rightHand',hand=document.getElementById(handId),stage=document.getElementById('handsStage'),r=stage.getBoundingClientRect(),key=keyEl.getBoundingClientRect(),[ax,ay]=pressedTipAnchors[id];hand.style.backgroundImage=`url("${keyboardAsset(poseNames[id])}")`;const homeX=(id[0]==='l'?0:r.width/2)+ax*r.width/1920,homeY=ay*r.height/819;const targetX=key.left+key.width/2-r.left,targetY=key.top+key.height/2-r.top;hand.style.transform=`translate(${targetX-homeX}px,${targetY-homeY}px)`}
+function resetHands(){for(const side of ['left','right']){const hand=document.getElementById(side+'Hand');hand.style.backgroundImage=`url("${keyboardAsset('idle')}")`;hand.style.transform=''}}
+function setMouseFrame(rightClick=false){mouseHand.style.backgroundImage=`url("${mouseAsset(rightClick)}")`}
 function onDown(e){if(!active||e.repeat)return;const k=e.key.toLowerCase(),label=displayKey(e);const el=codeEls.get(e.code)||keyEls.get(k)||keyEls.get(label.toLowerCase());if(el)el.classList.add('down');keyEvent.textContent='最近按键：'+label;for(const id of mappedFingers(k))showHandPose(id,el)}
 function onUp(e){const label=displayKey(e),el=codeEls.get(e.code)||keyEls.get(e.key.toLowerCase())||keyEls.get(label.toLowerCase());if(el)el.classList.remove('down');resetHands()}
 if(!window.chrome?.webview){window.addEventListener('keydown',onDown);window.addEventListener('keyup',onUp)}
 const pad=document.getElementById('mousepad'),mouse=document.getElementById('mouse'),mouseHand=document.getElementById('mouseHand');
+const skinSelect=document.getElementById('skinSelect');
+function applySkin(skin){activeSkin=skin;resetHands();mouseHand.classList.remove('left-click','right-click');setMouseFrame()}
+skinSelect.addEventListener('change',()=>applySkin(skinSelect.value));
+applySkin(skinSelect.value);
 function showMouseAt(x,y){const r=pad.getBoundingClientRect(),px=x*r.width,py=y*r.height;mouse.style.left=px+'px';mouse.style.top=py+'px';mouseHand.style.left=px+'px';mouseHand.style.top=py+'px'}
 pad.addEventListener('pointermove',e=>{const r=pad.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;mouse.style.left=x+'px';mouse.style.top=y+'px';mouseHand.style.left=x+'px';mouseHand.style.top=y+'px';mouseEvent.textContent=`位置：${Math.round(x)}, ${Math.round(y)}`});
-pad.addEventListener('pointerdown',e=>{mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(e.button===0)mouseHand.classList.add('left-click');else if(e.button===2)mouseHand.classList.add('right-click');mouseEvent.textContent='鼠标按下 · '+(e.button===0?'左键':e.button===2?'右键':'中键')});
-window.addEventListener('pointerup',()=>{mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click')});
+pad.addEventListener('pointerdown',e=>{mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(e.button===0)mouseHand.classList.add('left-click');else if(e.button===2)mouseHand.classList.add('right-click');setMouseFrame(e.button===2);mouseEvent.textContent='鼠标按下 · '+(e.button===0?'左键':e.button===2?'右键':'中键')});
+window.addEventListener('pointerup',()=>{mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click');setMouseFrame()});
 pad.addEventListener('wheel',e=>{mouseHand.classList.remove('scroll-wheel');void mouseHand.offsetWidth;mouseHand.classList.add('scroll-wheel');mouseEvent.textContent='滚轮：'+(e.deltaY<0?'向上':'向下');setTimeout(()=>mouseHand.classList.remove('scroll-wheel'),520)},{passive:true});pad.addEventListener('contextmenu',e=>e.preventDefault());
 const nativeDown=new Set();
-window.addEventListener('nativeinput',e=>{const d=e.detail;if(d.kind==='key'){if(d.phase==='down')nativeDown.add(d.code);else nativeDown.delete(d.code);const ev=new KeyboardEvent(d.phase==='down'?'keydown':'keyup',{key:d.key,code:d.code,ctrlKey:nativeDown.has('ControlLeft')||nativeDown.has('ControlRight'),shiftKey:nativeDown.has('ShiftLeft')||nativeDown.has('ShiftRight'),altKey:nativeDown.has('AltLeft')||nativeDown.has('AltRight'),metaKey:nativeDown.has('MetaLeft')||nativeDown.has('MetaRight')});if(d.phase==='down')onDown(ev);else onUp(ev)}else if(d.kind==='mouse'){showMouseAt(d.x,d.y);if(d.phase==='move')return;if(d.phase==='down'){mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(d.button==='left')mouseHand.classList.add('left-click');else if(d.button==='right')mouseHand.classList.add('right-click');mouseEvent.textContent='鼠标按下 · '+(d.button==='left'?'左键':d.button==='right'?'右键':'中键')}else if(d.phase==='up'){mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click')}else if(d.phase==='wheel-up'||d.phase==='wheel-down'){mouseHand.classList.remove('scroll-wheel');void mouseHand.offsetWidth;mouseHand.classList.add('scroll-wheel');mouseEvent.textContent='滚轮：'+(d.phase==='wheel-up'?'向上':'向下');setTimeout(()=>mouseHand.classList.remove('scroll-wheel'),520)}}});
+window.addEventListener('nativeinput',e=>{const d=e.detail;if(d.kind==='key'){if(d.phase==='down')nativeDown.add(d.code);else nativeDown.delete(d.code);const ev=new KeyboardEvent(d.phase==='down'?'keydown':'keyup',{key:d.key,code:d.code,ctrlKey:nativeDown.has('ControlLeft')||nativeDown.has('ControlRight'),shiftKey:nativeDown.has('ShiftLeft')||nativeDown.has('ShiftRight'),altKey:nativeDown.has('AltLeft')||nativeDown.has('AltRight'),metaKey:nativeDown.has('MetaLeft')||nativeDown.has('MetaRight')});if(d.phase==='down')onDown(ev);else onUp(ev)}else if(d.kind==='mouse'){showMouseAt(d.x,d.y);if(d.phase==='move')return;if(d.phase==='down'){mouse.classList.add('click');mouseHand.classList.remove('left-click','right-click');if(d.button==='left')mouseHand.classList.add('left-click');else if(d.button==='right')mouseHand.classList.add('right-click');setMouseFrame(d.button==='right');mouseEvent.textContent='鼠标按下 · '+(d.button==='left'?'左键':d.button==='right'?'右键':'中键')}else if(d.phase==='up'){mouse.classList.remove('click');mouseHand.classList.remove('left-click','right-click');setMouseFrame()}else if(d.phase==='wheel-up'||d.phase==='wheel-down'){mouseHand.classList.remove('scroll-wheel');void mouseHand.offsetWidth;mouseHand.classList.add('scroll-wheel');mouseEvent.textContent='滚轮：'+(d.phase==='wheel-up'?'向上':'向下');setTimeout(()=>mouseHand.classList.remove('scroll-wheel'),520)}}});
 </script>
 </body>
 </html>

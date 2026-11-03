@@ -14,6 +14,8 @@ dotnet run
 
 The WPF host embeds the HTML interface with WebView2. Global keyboard and mouse capture starts automatically after the interface loads and stops when the window closes. Physical input events are forwarded to the visualizer without suppressing them.
 
+The interface includes the classic hand set and a blue-haired character skin. Choose the active set from the **手部皮肤** menu in the header.
+
 ## Structure
 
 - `MainWindow.xaml` hosts WebView2.
