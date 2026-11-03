@@ -59,7 +59,7 @@
 </head>
 <body>
 <main>
-  <header><h1>键鼠映射 <span style="color:#d49472">/ INPUT VISUALIZER</span></h1><div class="header-controls"><label class="skin-picker" for="skinSelect">手部皮肤<select id="skinSelect"><option value="classic">经典款</option><option value="blue">蓝发角色</option></select></label><div class="status" id="status">LISTENING · 全局键鼠已激活</div></div></header>
+  <header><h1>键鼠映射 <span style="color:#d49472">/ INPUT VISUALIZER</span></h1><div class="header-controls"><label class="skin-picker" for="skinSelect">手部皮肤<select id="skinSelect"><option value="classic">经典款</option><option value="blue">蓝发角色</option><option value="cel90">蓝发角色 · 90年代赛璐璐</option></select></label><div class="status" id="status">LISTENING · 全局键鼠已激活</div></div></header>
   <div class="layout">
     <section class="panel"><h2>键盘输入</h2><div class="keyboard-deck"><div class="keyboard" id="keyboard"></div>
       <div class="hands-stage" id="handsStage" aria-label="键盘手部动作示意"><div class="keyboard-hand left" id="leftHand" role="img" aria-label="左手"></div><div class="keyboard-hand right" id="rightHand" role="img" aria-label="右手"></div></div>
@@ -83,13 +83,13 @@ function displayKey(e){return special[e.key]||e.key.toUpperCase()}
 const fingerMap={lp:'1qaz',lr:'2wsx',lm:'3edc',li:'45rtfgvb',ri:'67yuhjnm',rm:'8ik,',rr:'9ol.',rp:'0p[]\\;\'/',lt:' ',rt:' '};
 function mappedFingers(k){if(k===' ')return ['lt','rt'];for(const [finger,keys] of Object.entries(fingerMap))if(finger!=='lt'&&finger!=='rt'&&keys.includes(k))return [finger];return []}
 const poseNames={lp:'left-pinky',lr:'left-ring',lm:'left-middle',li:'left-index',lt:'left-thumb',rp:'right-pinky',rr:'right-ring',rm:'right-middle',ri:'right-index',rt:'right-thumb'};
-for(const prefix of ['','blue-'])Object.values(poseNames).concat(['idle']).forEach(n=>{const img=new Image();img.src=`keyboard-hands-${prefix}${n}.png`});
-['mouse-hand-sprites.png','mouse-hand-right-click-sprites.png','mouse-hand-blue-sprites.png','mouse-hand-blue-right-click-sprites.png'].forEach(src=>{const img=new Image();img.src=src});
+for(const prefix of ['','blue-','cel90-'])Object.values(poseNames).concat(['idle']).forEach(n=>{const img=new Image();img.src=`keyboard-hands-${prefix}${n}.png`});
+['mouse-hand-sprites.png','mouse-hand-right-click-sprites.png','mouse-hand-blue-sprites.png','mouse-hand-blue-right-click-sprites.png','mouse-hand-cel90-sprites.png','mouse-hand-cel90-right-click-sprites.png'].forEach(src=>{const img=new Image();img.src=src});
 // X values are local to each hand's half of the sprite canvas; the right-hand half starts at source x=960.
 const pressedTipAnchors={lp:[485,155],lr:[565,140],lm:[660,135],li:[835,198],lt:[882,280],rp:[475,155],rr:[375,140],rm:[280,135],ri:[125,190],rt:[78,275]};
 let activeSkin='classic';
-function keyboardAsset(pose){return `keyboard-hands-${activeSkin==='blue'?'blue-':''}${pose}.png`}
-function mouseAsset(rightClick=false){return activeSkin==='blue'?(rightClick?'mouse-hand-blue-right-click-sprites.png':'mouse-hand-blue-sprites.png'):(rightClick?'mouse-hand-right-click-sprites.png':'mouse-hand-sprites.png')}
+function keyboardAsset(pose){const prefix=activeSkin==='blue'?'blue-':activeSkin==='cel90'?'cel90-':'';return `keyboard-hands-${prefix}${pose}.png`}
+function mouseAsset(rightClick=false){const prefix=activeSkin==='blue'?'blue-':activeSkin==='cel90'?'cel90-':'';return rightClick?`mouse-hand-${prefix}right-click-sprites.png`:`mouse-hand-${prefix}sprites.png`}
 function showHandPose(id,keyEl){const handId=id[0]==='l'?'leftHand':'rightHand',hand=document.getElementById(handId),stage=document.getElementById('handsStage'),r=stage.getBoundingClientRect(),key=keyEl.getBoundingClientRect(),[ax,ay]=pressedTipAnchors[id];hand.style.backgroundImage=`url("${keyboardAsset(poseNames[id])}")`;const homeX=(id[0]==='l'?0:r.width/2)+ax*r.width/1920,homeY=ay*r.height/819;const targetX=key.left+key.width/2-r.left,targetY=key.top+key.height/2-r.top;hand.style.transform=`translate(${targetX-homeX}px,${targetY-homeY}px)`}
 function resetHands(){for(const side of ['left','right']){const hand=document.getElementById(side+'Hand');hand.style.backgroundImage=`url("${keyboardAsset('idle')}")`;hand.style.transform=''}}
 function setMouseFrame(rightClick=false){mouseHand.style.backgroundImage=`url("${mouseAsset(rightClick)}")`}
