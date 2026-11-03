@@ -8,12 +8,12 @@
   :root { color-scheme: dark; --bg:#211b1c; --panel:#302527; --line:#76524b; --peach:#e8b28d; --cream:#f4d6b5; --mint:#9ce3a7; --muted:#ba9b91; }
   * { box-sizing:border-box }
   body { margin:0; min-height:100vh; background:radial-gradient(ellipse at 50% 10%,#563b3d,#261f21 65%); color:var(--cream); font:15px/1.5 "Segoe UI","Microsoft YaHei",sans-serif; }
-  main { width:min(1100px,96vw); margin:auto; padding:28px 0 36px; }
+  main { width:min(1360px,96vw); margin:auto; padding:20px 0 24px; }
   header { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px; }
   h1 { margin:0; font-size:22px; letter-spacing:.08em; font-weight:650 }
   .status { color:var(--mint); font:12px/1.4 Consolas,monospace; letter-spacing:.12em }
   .status::before { content:""; display:inline-block; width:8px;height:8px;border-radius:50%;background:var(--mint);margin-right:9px;box-shadow:0 0 10px #9ce3a7 }
-  .layout { display:grid; grid-template-columns:1fr 280px; gap:18px; margin-top:26px; }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(340px,34%); gap:20px; margin-top:18px; }
   .panel { border:1px solid #785950; border-radius:14px; background:#392c2dce; padding:18px; box-shadow:0 10px 25px #100b0b55 }
   h2 { margin:0 0 14px; color:#f2c9a2; font-size:14px; font-weight:600; letter-spacing:.08em }
   .keyboard { display:grid; gap:6px; user-select:none }
@@ -22,8 +22,9 @@
   .key.w2 { min-width:58px } .key.w3 { min-width:76px } .key.w4 { min-width:98px } .key.space { flex:1;max-width:270px }
   .key.down { transform:translateY(3px); box-shadow:0 0 0 #755343; background:var(--mint); filter:brightness(1.08) }
   .key.dim { opacity:.55 }
-  .side { display:flex; flex-direction:column; gap:14px }
-  .mousepad { height:210px; border-radius:12px; background:linear-gradient(145deg,#705048,#3d2b2d); border:1px solid #9b7060; position:relative; overflow:hidden; cursor:crosshair }
+  .side { display:flex; flex-direction:column; gap:14px; min-height:0 }
+  .side>.panel { flex:1; display:flex; flex-direction:column; min-height:0 }
+  .mousepad { flex:1; min-height:360px; height:auto; border-radius:12px; background:linear-gradient(145deg,#705048,#3d2b2d); border:1px solid #9b7060; position:relative; overflow:hidden; cursor:crosshair }
   .mouse { display:none }
   .mouse-hand { position:absolute; left:50%;top:55%; width:210px; height:135px; transform:translate(-65%,-21%); background-image:url("mouse-hand-sprites.png");background-repeat:no-repeat;background-size:200% 100%;background-position:0% 50%;pointer-events:none;transition:left .045s linear,top .045s linear,filter .08s;filter:drop-shadow(0 3px 2px #1c111155); }
   .mouse-hand.left-click { background-position:100% 50%;filter:brightness(1.04) drop-shadow(0 3px 2px #1c111155) }
@@ -50,7 +51,7 @@
   .keyboard-finger-legend { display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:8px;color:#c0a39a;font-size:11px }
   .keyboard-finger-legend span::before { content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#d69a76;margin-right:5px }
   footer { margin-top:14px; color:#b89a90; font-size:12px }
-  @media(max-width:760px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.mousepad{height:160px}.key{min-width:26px;height:34px;font-size:10px}.key.w2{min-width:40px}.key.w3{min-width:54px}.key.w4{min-width:66px}}
+  @media(max-width:900px){main{width:96vw}.layout{grid-template-columns:1fr}.side{display:block}.side>.panel{min-height:420px}.mousepad{height:320px;min-height:320px;flex:none}.key{min-width:26px;height:34px;font-size:10px}.key.w2{min-width:40px}.key.w3{min-width:54px}.key.w4{min-width:66px}}
 </style>
 </head>
 <body>
