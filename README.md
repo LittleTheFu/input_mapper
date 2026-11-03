@@ -2,6 +2,10 @@
 
 Windows 11 desktop shell for the current input visualizer prototype.
 
+## Screenshot
+
+![Input Mapper desktop screenshot](docs/images/input-mapper-screenshot.png)
+
 ## Build and run
 
 Requirements: .NET 9 SDK and Microsoft Edge WebView2 Runtime.
